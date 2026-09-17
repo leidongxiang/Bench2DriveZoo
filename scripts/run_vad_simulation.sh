@@ -45,7 +45,18 @@ if ! ss -ltn "sport = :$CARLA_PORT" | grep -q LISTEN; then
     }
 fi
 
+# Player-generated route XML lives on the host. Give it a stable container path.
+route_mount=()
+if [[ -f "$ROUTES" ]]; then
+    route_mount=(-v "$ROUTES:/tmp/player-route.xml:ro")
+    ROUTES=/tmp/player-route.xml
+fi
+
+rm -f "$B2D_OUTPUT/eval/$RUN_NAME/container.cid"
+
 docker run --rm \
+    --cidfile "$B2D_OUTPUT/eval/$RUN_NAME/container.cid" \
+    "${route_mount[@]}" \
     --user "$(id -u):$(id -g)" \
     --gpus all \
     --network host \

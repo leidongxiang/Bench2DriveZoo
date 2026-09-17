@@ -564,7 +564,9 @@ class PlayerState:
             for point in validation["points"]:
                 values = {axis: str(point[axis]) for axis in ("x", "y", "z")}
                 ET.SubElement(waypoints, "position", **values)
-            ET.SubElement(route, "scenarios")
+            scenarios = ET.SubElement(route, "scenarios")
+            self._add_matching_scenarios(scenarios, town, validation["path"] or [
+                [point[axis] for axis in ("x", "y", "z")] for point in validation["points"]])
             weathers = ET.SubElement(route, "weathers")
             ET.SubElement(weathers, "weather", route_percentage="0", cloudiness="0", precipitation="0", precipitation_deposits="0", wind_intensity="0", sun_azimuth_angle="0", sun_altitude_angle="70", fog_density="0", wetness="0")
             label = f"{town} · 自定义路线"
@@ -579,9 +581,48 @@ class PlayerState:
             if route is None or route.find("waypoints") is None:
                 raise ValueError("route 缺少 waypoints")
             label = f"{route.get('town', 'Unknown')} · 导入路线 {route.get('id', '')}"
+        for route in root.findall("route"):
+            self._ensure_scenario(route)
         ET.indent(root)
         ET.ElementTree(root).write(target, encoding="utf-8", xml_declaration=True)
         return label
+
+    def _add_matching_scenarios(self, target, town, path):
+        source = ET.parse(self.routes_file).getroot()
+        for route in source.findall("route"):
+            if route.get("town") != town:
+                continue
+            scenarios = route.find("scenarios")
+            for scenario in list(scenarios) if scenarios is not None else []:
+                trigger = scenario.find("trigger_point")
+                if trigger is None:
+                    continue
+                try:
+                    x, y = float(trigger.get("x")), float(trigger.get("y"))
+                except (TypeError, ValueError):
+                    continue
+                if any(math.hypot(point[0] - x, point[1] - y) <= 3 for point in path):
+                    target.append(copy.deepcopy(scenario))
+                    if len(target) >= 8:
+                        return
+
+    @staticmethod
+    def _ensure_scenario(route):
+        scenarios = route.find("scenarios")
+        if scenarios is None:
+            scenarios = ET.SubElement(route, "scenarios")
+        if len(scenarios):
+            return
+        first = route.find("waypoints/position")
+        if first is None:
+            raise ValueError("路线缺少路径点")
+        # The evaluator requires scenario_configs[0], while RouteScenario
+        # filters this distant trigger before constructing any actor.
+        x = float(first.get("x")) + 10000
+        y = float(first.get("y")) + 10000
+        scenario = ET.SubElement(scenarios, "scenario", name="NoScenario", type="ParkingExit")
+        ET.SubElement(scenario, "trigger_point", x=str(x), y=str(y),
+                      z=first.get("z", "0"), yaw="0")
 
     def _run_job(self, job_id):
         with self.lock:
@@ -619,11 +660,16 @@ class PlayerState:
         route_dirs = [path for path in (run_dir / "sensors").glob("*") if path.is_dir()]
         route_dir = max(route_dirs, key=lambda path: path.stat().st_mtime) if route_dirs else None
         frame_count = self._frame_count(route_dir) if route_dir else 0
-        status = "ready" if job.get("returnCode") == 0 and frame_count else "failed"
-        message = "推理完成，可以播放" if status == "ready" else "推理未生成完整可播放结果"
+        partial = bool(frame_count and job.get("returnCode") != 0)
+        status = "ready" if frame_count else "failed"
+        if partial:
+            message = f"{'已停止' if job.get('stopRequested') else '推理中断'}，保留 {frame_count} 帧可回放；评测未完成"
+        else:
+            message = "推理完成，可以播放" if status == "ready" else "推理未生成可播放帧"
         with self.lock:
             job.update(
                 status=status,
+                partial=partial,
                 message=message,
                 finishedAt=time.time(),
                 frameCount=frame_count,
@@ -637,9 +683,21 @@ class PlayerState:
             job = self.jobs.get(job_id)
             if not job or job.get("status") != "running" or not job.get("pid"):
                 raise ValueError("任务不在运行")
-            os.killpg(job["pid"], signal.SIGTERM)
             job["message"] = "正在停止"
+            job["stopRequested"] = True
             self._write_job(job)
+            pid = job["pid"]
+            run_name = job["runName"]
+        cid_file = self.output_root / run_name / "container.cid"
+        if cid_file.is_file():
+            container_id = cid_file.read_text().strip()
+            if re.fullmatch(r"[0-9a-f]{64}", container_id):
+                subprocess.run(["docker", "stop", "--time", "2", container_id],
+                               capture_output=True, timeout=15, check=False)
+        try:
+            os.killpg(pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
 
     def delete_run(self, run_id):
         with self.lock:

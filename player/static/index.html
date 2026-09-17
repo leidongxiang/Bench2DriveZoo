@@ -43,12 +43,14 @@
         <div id="player" class="player" hidden>
           <div class="player-heading">
             <div><p class="eyebrow">PLAYBACK</p><h2 id="player-title"></h2></div>
-            <div id="score" class="score"></div>
+            <div class="player-heading-actions"><div id="score" class="score"></div><button id="fullscreen-visuals" type="button">画面全屏</button></div>
           </div>
-          <div class="visual-grid">
+          <div id="visuals" class="visual-grid">
             <div id="cameras" class="cameras"></div>
-            <figure class="bev-view"><img id="bev" alt="BEV"><figcaption>BEV</figcaption></figure>
+            <figure class="bev-view"><div class="frame-media"><img id="bev" alt="BEV"><canvas id="bev-vector" width="512" height="512" hidden aria-label="VAD 矢量 BEV"></canvas><canvas id="overlay-bev" width="512" height="512"></canvas></div><figcaption>BEV</figcaption></figure>
           </div>
+          <div class="overlay-controls"><label><input id="show-pred" type="checkbox" checked> 推理框</label><label><input id="show-gt" type="checkbox" checked> GT 框</label><span id="overlay-status">读取框数据中</span></div>
+          <div id="command-options" class="command-options" aria-label="六种驾驶命令"></div>
           <div class="transport">
             <button id="previous" class="icon-button" title="上一帧" aria-label="上一帧">◀</button>
             <button id="play" class="play-button">播放</button>
@@ -62,6 +64,9 @@
             <div class="metric"><span>转向</span><strong id="steer-value">—</strong></div>
             <div class="metric"><span>油门</span><strong id="throttle-value">—</strong></div>
             <div class="metric"><span>制动</span><strong id="brake-value">—</strong></div>
+            <div class="metric"><span>驾驶命令</span><strong id="command-value">—</strong></div>
+            <div class="metric" title="单次模型前向计算耗时的倒数，不含 CARLA 和图像保存"><span>模型推理 FPS</span><strong id="model-fps-value">—</strong></div>
+            <div class="metric" title="仿真 tick 数除以评测墙钟耗时，包含 CARLA、模型和数据处理"><span>仿真 FPS</span><strong id="simulation-fps-value">—</strong></div>
             <canvas id="plan" width="380" height="150" aria-label="规划轨迹"></canvas>
             <details><summary>当前帧 JSON</summary><pre id="frame-json"></pre></details>
           </div>
@@ -109,9 +114,9 @@
             <canvas id="town-map" width="1000" height="620" aria-label="Town 路线地图"></canvas>
             <div id="map-loading" class="map-loading">加载地图</div>
           </div>
-          <div class="map-legend"><span><i class="road-key"></i>参考道路</span><span><i class="route-key"></i>自定义路线</span><span>点击地图添加起点、途经点和终点</span></div>
+          <div class="map-legend"><span><i class="road-key"></i>参考道路</span><span>点击地图添加起点、途经点和终点；仅显示输入点</span></div>
           <pre id="waypoint-summary" class="waypoint-summary">尚未选择路径点</pre>
-          <p class="hint">任意点击都会吸附到全图最近的 OpenDRIVE driving lane；红线沿车道网络规划，不是坐标点之间的直线。所有相邻分段连通后才能开始推理。</p>
+          <p class="hint">点击后会吸附到附近 driving lane。网页只显示提交的路径点；实际轨迹由 CARLA 生成。与路线重合的预置场景会自动复用；没有匹配时不创建动态场景。</p>
         </div>
 
         <div class="mode-panel" data-panel="xml">

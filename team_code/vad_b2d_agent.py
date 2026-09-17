@@ -16,7 +16,9 @@ from PIL import Image
 from torchvision import transforms as T
 from Bench2DriveZoo.team_code.pid_controller import PIDController
 from Bench2DriveZoo.team_code.planner import RoutePlanner
+from Bench2DriveZoo.team_code.player_overlays import build_overlays
 from leaderboard.autoagents import autonomous_agent
+from srunner.scenariomanager.carla_data_provider import CarlaDataProvider
 from mmcv import Config
 from mmcv.models import build_model
 from mmcv.utils import (get_dist_info, init_dist, load_checkpoint,
@@ -50,8 +52,11 @@ class VadAgent(autonomous_agent.AutonomousAgent):
             self.save_name = '_'.join(map(lambda x: '%02d' % x, (now.month, now.day, now.hour, now.minute, now.second)))
         self.step = -1
         self.wall_start = time.time()
+        self.model_call_count = 0
+        self.model_time_total = 0.0
         self.initialized = False
         cfg = Config.fromfile(self.config_path)
+        self.overlay_class_names = list(cfg.class_names)
         if hasattr(cfg, 'plugin'):
             if cfg.plugin:
                 import importlib
@@ -389,7 +394,13 @@ class VadAgent(autonomous_agent.AutonomousAgent):
             if key != 'img_metas':
                 if torch.is_tensor(data[0]):
                     data[0] = data[0].to(self.device)
+        torch.cuda.synchronize()
+        model_start = time.perf_counter()
         output_data_batch = self.model(input_data_batch, return_loss=False, rescale=True)
+        torch.cuda.synchronize()
+        model_seconds = time.perf_counter() - model_start
+        self.model_call_count += 1
+        self.model_time_total += model_seconds
         all_out_truck_d1 = output_data_batch[0]['pts_bbox']['ego_fut_preds'].cpu().numpy()
         all_out_truck =  np.cumsum(all_out_truck_d1,axis=1)
         out_truck = all_out_truck[command]
@@ -400,6 +411,9 @@ class VadAgent(autonomous_agent.AutonomousAgent):
         control = carla.VehicleControl()
         self.pid_metadata = metadata_traj
         self.pid_metadata['agent'] = 'only_traj'
+        self.pid_metadata['modelLatencyMs'] = round(model_seconds * 1000, 2)
+        self.pid_metadata['modelFps'] = round(1.0 / model_seconds, 2)
+        self.pid_metadata['modelFpsAvg'] = round(self.model_call_count / self.model_time_total, 2)
         control.steer = np.clip(float(steer_traj), -1, 1)
         control.throttle = np.clip(float(throttle_traj), 0, 0.75)
         control.brake = np.clip(float(brake_traj), 0, 1)     
@@ -415,7 +429,24 @@ class VadAgent(autonomous_agent.AutonomousAgent):
 
         metric_info = self.get_metric_info()
         self.metric_info[self.step] = metric_info
-        if SAVE_PATH is not None and self.step % 1 == 0:
+        if SAVE_PATH is not None and self.step % 10 == 0:
+            try:
+                hero = CarlaDataProvider.get_hero_actor() or self.hero_actor
+                actors = list(CarlaDataProvider.get_world().get_actors())
+                known_ids = {actor.id for actor in actors}
+                for actor_id, actor in CarlaDataProvider.get_actors():
+                    if actor_id not in known_ids:
+                        actors.append(actor)
+                self.pid_metadata['overlays'] = build_overlays(
+                    output_data_batch[0]['pts_bbox'],
+                    actors,
+                    hero.id,
+                    hero.get_transform().get_inverse_matrix(),
+                    self.lidar2ego, self.lidar2img,
+                    self.coor2topdown, self.overlay_class_names)
+            except Exception as error:
+                self.pid_metadata['overlays'] = {'error': str(error)}
+                print('WARNING: player overlays unavailable: {}'.format(error), flush=True)
             self.save(tick_data)
         self.prev_control = control
         

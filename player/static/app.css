@@ -10,3 +10,34 @@ button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}he
 .trash-item button.danger{background:var(--signal);border-color:var(--signal);color:#fff}.trash-item button.danger:hover{background:var(--signal-dark)}
 .map-toolbar.compact{align-items:center;color:var(--muted);font-size:12px}.fullscreen-button{width:36px;height:36px;padding:0!important;font-size:20px!important;line-height:1}.map-editor:fullscreen{width:100vw;height:100vh;max-width:none;border:0;border-radius:0;background:#111b20;padding:18px}.map-editor:fullscreen canvas{width:100%;height:100%;max-height:none}.map-editor:fullscreen::after{content:"Esc 退出全屏";position:fixed;right:18px;top:18px;padding:7px 10px;border-radius:4px;background:#172026dd;color:#fff;font:12px "IBM Plex Mono",monospace}.preset-map{min-height:260px}.preset-map canvas{max-height:42vh}
 .map-editor:fullscreen #custom-map-actions{position:fixed;z-index:2;top:18px;right:18px;background:transparent}.map-editor:fullscreen::after{right:18px;top:66px}
+.run-browser,.run-list,.run-item{min-width:0}.run-message{margin-top:7px;color:var(--muted);font-size:12px;line-height:1.4;overflow-wrap:anywhere;word-break:break-word;white-space:normal}
+[hidden]{display:none!important}
+.player-shell{align-self:start}
+.player{margin:0 auto}
+.player-heading-actions{display:flex;align-items:center;gap:8px}
+.player-heading-actions button{border:1px solid var(--line);border-radius:4px;background:var(--surface);padding:6px 9px}
+.camera,.bev-view{min-width:0}
+.frame-media{position:relative;width:100%;aspect-ratio:16/9}
+.bev-view .frame-media{aspect-ratio:1}
+.frame-media img{display:block;width:100%;height:100%;object-fit:contain}
+.frame-media canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.overlay-controls{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:8px 0;color:var(--muted);font-size:12px}
+.overlay-controls label{display:flex;align-items:center;gap:4px;cursor:pointer}
+.overlay-controls input{accent-color:var(--signal)}
+.player:fullscreen{width:100vw;height:100vh;max-width:none;margin:0;padding:10px;display:flex;flex-direction:column;gap:6px;background:var(--paper);overflow:auto}
+.player:fullscreen .player-heading{flex:none;margin:0}
+.player:fullscreen .visual-grid{flex:1;min-height:0;align-items:center;grid-template-columns:minmax(0,3fr) minmax(0,1fr);gap:6px}
+.player:fullscreen .cameras{height:100%;align-content:center}
+.player:fullscreen .camera,.player:fullscreen .bev-view{align-self:center}
+.player:fullscreen .overlay-controls,.player:fullscreen .command-options{flex:none;margin:0}
+.player:fullscreen .transport{flex:none;padding:4px 0}
+.player:fullscreen .telemetry{display:flex;gap:6px;flex:none}
+.player:fullscreen .telemetry .metric{flex:1;padding:5px 8px}
+.player:fullscreen .telemetry .metric strong{font-size:14px}
+.player:fullscreen .telemetry canvas,.player:fullscreen .telemetry details{display:none}
+@media(max-width:620px){.player:fullscreen .telemetry{flex-wrap:wrap}.player:fullscreen .telemetry .metric{min-width:28%}}
+.command-options{display:flex;gap:5px;flex-wrap:wrap;margin:0 0 8px}.command-options span{padding:3px 7px;border:1px solid var(--line);border-radius:4px;color:var(--muted);font-size:11px;background:var(--surface)}.command-options span.active{border-color:var(--signal);background:#f8e3dc;color:var(--signal-dark);font-weight:700}
+
+.run-progress-label{margin-top:8px;color:var(--muted);font-size:12px}.run-progress{display:block;width:100%;height:8px;margin:5px 0 7px;accent-color:var(--signal)}
+
+#bev-vector{z-index:1}#overlay-bev{z-index:2}

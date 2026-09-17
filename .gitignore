@@ -165,3 +165,6 @@ val/
 
 # Local runtime configuration
 .env
+# Runtime player progress snapshot
+player/static/progress.json
+player/static/progress.json.tmp
