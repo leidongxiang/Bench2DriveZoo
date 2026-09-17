@@ -11,7 +11,10 @@ GPUS=$3                                              #
 GPUS_PER_NODE=$(($GPUS<8?$GPUS:8))
 
 MASTER_PORT=${MASTER_PORT:-12145}
-WORK_DIR=$(echo ${CFG%.*} | sed -e "s/configs/work_dirs/g")/
+DEFAULT_WORK_DIR=$(echo ${CFG%.*} | sed -e "s/configs/work_dirs/g")/
+CONFIG_NAME=$(basename "${CFG%.*}")
+WORK_DIR=${B2D_OUTPUT:+${B2D_OUTPUT}/eval/uniad/${CONFIG_NAME}/}
+WORK_DIR=${WORK_DIR:-$DEFAULT_WORK_DIR}
 # Intermediate files and logs will be saved to UniAD/projects/work_dirs/
 
 if [ ! -d ${WORK_DIR}logs ]; then

@@ -1,0 +1,41 @@
+FROM bench2drive-zoo:cuda11.8 AS vulkan-loader-build
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    libx11-dev \
+    libx11-xcb-dev \
+    libxcb1-dev \
+    libwayland-dev \
+    libxrandr-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/* \
+    && git clone --depth 1 --branch v1.3.275 \
+        https://github.com/KhronosGroup/Vulkan-Headers.git /tmp/Vulkan-Headers \
+    && cmake -S /tmp/Vulkan-Headers -B /tmp/Vulkan-Headers/build -G Ninja \
+        -DCMAKE_INSTALL_PREFIX=/opt/vulkan-loader \
+    && cmake --install /tmp/Vulkan-Headers/build \
+    && git clone --depth 1 --branch v1.3.275 \
+        https://github.com/KhronosGroup/Vulkan-Loader.git /tmp/Vulkan-Loader \
+    && cmake -S /tmp/Vulkan-Loader -B /tmp/Vulkan-Loader/build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/opt/vulkan-loader \
+        -DCMAKE_PREFIX_PATH=/opt/vulkan-loader \
+        -DBUILD_TESTS=OFF \
+    && cmake --build /tmp/Vulkan-Loader/build \
+    && cmake --install /tmp/Vulkan-Loader/build
+
+FROM bench2drive-zoo:cuda11.8
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libjpeg-turbo8 \
+    libpng16-16 \
+        libtiff5 \
+        xdg-user-dirs \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY mmcv/metrics /usr/local/lib/python3.8/dist-packages/mmcv/metrics
+COPY --from=vulkan-loader-build /opt/vulkan-loader/lib/libvulkan.so.1.3.275 /opt/vulkan-loader/lib/libvulkan.so.1.3.275
+
+RUN ln -s libvulkan.so.1.3.275 /opt/vulkan-loader/lib/libvulkan.so.1
+
+ENV LD_LIBRARY_PATH=/opt/vulkan-loader/lib:${LD_LIBRARY_PATH} \
+    PYTHONPATH=/workspace:/workspace/Bench2Drive:/workspace/carla/PythonAPI/carla:/workspace/carla/PythonAPI/carla/dist/carla-0.9.15-py3.7-linux-x86_64.egg

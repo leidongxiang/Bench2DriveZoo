@@ -11,6 +11,7 @@ __pycache__/
 *.avi
 ckpts/
 data/bench2drive/
+data/nuscenes/
 data/infos
 data_carla
 viz/
@@ -140,6 +141,9 @@ output/
 test/
 ckpts/
 ckpts
+outputs/
+logs/
+cache/
 
 # work_dirs
 **/work_dirs
@@ -158,3 +162,6 @@ pyrightconfig.json
 tmp_ckpts/
 val/
 *.ipynb
+
+# Local runtime configuration
+.env

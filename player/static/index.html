@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Bench2Drive Route Lab</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <header>
+    <div>
+      <p class="eyebrow">VAD / CLOSED LOOP</p>
+      <h1>Bench2Drive Route Lab</h1>
+    </div>
+    <div class="header-status">
+      <div id="system-status" class="system-status">Web 8070 · CARLA 30000</div>
+      <div id="disk-status" class="system-status">磁盘读取中</div>
+      <div id="connection" class="status">正在连接</div>
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="视图切换">
+    <button class="tab active" data-view="runs">结果与播放</button>
+    <button class="tab" data-view="create">新建推理</button>
+    <button class="tab" data-view="trash">回收站 <span id="trash-count"></span></button>
+  </nav>
+
+  <main>
+    <section id="runs-view" class="view active">
+      <aside class="run-browser">
+        <div class="section-heading">
+          <div><p class="eyebrow">RUNS</p><h2>推理结果</h2></div>
+          <button id="refresh" class="icon-button" title="刷新" aria-label="刷新">↻</button>
+        </div>
+        <div id="run-list" class="run-list"></div>
+      </aside>
+
+      <section class="player-shell">
+        <div id="empty-player" class="empty-state">
+          <strong>选择一条已完成路线</strong>
+          <span>结果完成后才会开放 PNG + JSON 播放。</span>
+        </div>
+        <div id="player" class="player" hidden>
+          <div class="player-heading">
+            <div><p class="eyebrow">PLAYBACK</p><h2 id="player-title"></h2></div>
+            <div id="score" class="score"></div>
+          </div>
+          <div class="visual-grid">
+            <div id="cameras" class="cameras"></div>
+            <figure class="bev-view"><img id="bev" alt="BEV"><figcaption>BEV</figcaption></figure>
+          </div>
+          <div class="transport">
+            <button id="previous" class="icon-button" title="上一帧" aria-label="上一帧">◀</button>
+            <button id="play" class="play-button">播放</button>
+            <button id="next" class="icon-button" title="下一帧" aria-label="下一帧">▶</button>
+            <input id="timeline" type="range" min="0" max="0" value="0" aria-label="时间轴">
+            <output id="frame-label">0 / 0</output>
+            <label class="speed">速度<select id="speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+          </div>
+          <div class="telemetry">
+            <div class="metric"><span>速度</span><strong id="speed-value">—</strong></div>
+            <div class="metric"><span>转向</span><strong id="steer-value">—</strong></div>
+            <div class="metric"><span>油门</span><strong id="throttle-value">—</strong></div>
+            <div class="metric"><span>制动</span><strong id="brake-value">—</strong></div>
+            <canvas id="plan" width="380" height="150" aria-label="规划轨迹"></canvas>
+            <details><summary>当前帧 JSON</summary><pre id="frame-json"></pre></details>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section id="create-view" class="view create-view">
+      <div class="create-intro">
+        <p class="eyebrow">NEW INFERENCE</p>
+        <h2>选择道路，等待一次完整推理。</h2>
+        <p>任务串行使用 CARLA 与 GPU。推理期间不发布中间帧，完成后自动出现在结果列表。</p>
+      </div>
+      <form id="run-form">
+        <div class="mode-switch" role="tablist">
+          <button type="button" class="mode active" data-mode="preset">预置路线</button>
+          <button type="button" class="mode" data-mode="custom">坐标路线</button>
+          <button type="button" class="mode" data-mode="xml">XML 导入</button>
+        </div>
+
+        <div class="mode-panel active" data-panel="preset">
+          <div class="route-filters">
+            <label>Town<select id="route-town"><option value="">全部 Town</option></select></label>
+            <label>搜索<input id="route-search" placeholder="Route ID 或场景"></label>
+          </div>
+          <label>路线<select id="route-select"></select></label>
+          <div id="route-facts" class="route-facts"></div>
+          <div class="map-toolbar compact">
+            <span>路线预览</span>
+            <button id="preset-fullscreen" class="fullscreen-button" type="button" title="全屏查看地图" aria-label="全屏查看地图">⛶</button>
+          </div>
+          <div id="preset-map-editor" class="map-editor preset-map">
+            <canvas id="preset-map" width="1000" height="620" aria-label="预置路线地图"></canvas>
+            <div id="preset-map-loading" class="map-loading">加载路线</div>
+          </div>
+          <div class="map-legend"><span><i class="road-key"></i>OpenDRIVE 道路</span><span><i class="route-key"></i>预置路线</span></div>
+        </div>
+
+        <div class="mode-panel" data-panel="custom">
+          <div class="map-toolbar">
+            <label>地图<select id="town"></select></label>
+            <div id="custom-map-actions" class="map-actions"><button id="undo-point" type="button">撤销点</button><button id="clear-points" type="button">清空</button><button id="custom-fullscreen" class="fullscreen-button" type="button" title="全屏查看地图" aria-label="全屏查看地图">⛶</button></div>
+          </div>
+          <div class="map-editor">
+            <canvas id="town-map" width="1000" height="620" aria-label="Town 路线地图"></canvas>
+            <div id="map-loading" class="map-loading">加载地图</div>
+          </div>
+          <div class="map-legend"><span><i class="road-key"></i>参考道路</span><span><i class="route-key"></i>自定义路线</span><span>点击地图添加起点、途经点和终点</span></div>
+          <pre id="waypoint-summary" class="waypoint-summary">尚未选择路径点</pre>
+          <p class="hint">任意点击都会吸附到全图最近的 OpenDRIVE driving lane；红线沿车道网络规划，不是坐标点之间的直线。所有相邻分段连通后才能开始推理。</p>
+        </div>
+
+        <div class="mode-panel" data-panel="xml">
+          <label>单路线 XML<textarea id="route-xml" spellcheck="false" placeholder="<routes>…</routes>"></textarea></label>
+          <label class="file-label">从文件读取<input id="xml-file" type="file" accept=".xml,text/xml"></label>
+        </div>
+
+        <div id="form-error" class="form-error" hidden></div>
+        <button class="primary" type="submit">开始本机推理</button>
+      </form>
+    </section>
+
+    <section id="trash-view" class="view trash-view">
+      <div class="trash-heading"><div><p class="eyebrow">RECYCLE BIN</p><h2>回收站</h2><p>普通删除只移动到这里。永久删除后无法恢复。</p></div></div>
+      <div id="trash-list" class="trash-list"></div>
+    </section>
+  </main>
+
+  <dialog id="delete-dialog">
+    <h2>移除推理结果？</h2>
+    <p id="delete-message"></p>
+    <div class="dialog-actions"><button id="cancel-delete">取消</button><button id="confirm-delete" class="danger">移入回收区</button></div>
+  </dialog>
+  <script src="/app.js"></script>
+</body>
+</html>

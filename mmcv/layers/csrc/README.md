@@ -1,7 +1,5 @@
+添加新的算子（Op）时：
 
-
-To add a new Op:
-
-1. Create a new directory
-2. Implement new ops there
-3. Delcare its Python interface in `vision.cpp`.
+1. 创建新目录。
+2. 在该目录中实现新算子。
+3. 在 `vision.cpp` 中声明其 Python 接口。

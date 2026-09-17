@@ -1,25 +1,23 @@
-
 <h2 align="center">
   <img src="assets/bench2drive.jpg" style="width: 100%; height: auto;">
 </h2>
 <h2 align="center">
-Bench2DriveZoo (with Think2Drive as Teacher Model)
+Bench2DriveZoo（以 Think2Drive 作为教师模型）
 </h2>
 <h2 align="center">
   <img src="assets/bench2drivezoo.png" style="width: 100%; height: auto;">
 </h2>
 
+# 项目简介
 
-# Introduction
+- 本仓库包含 [Bench2Drive](https://github.com/Thinklab-SJTU/Bench2Drive) 中 [BEVFormer](https://github.com/fundamentalvision/BEVFormer)、[UniAD](https://github.com/OpenDriveLab/UniAD) 和 [VAD](https://github.com/hustvl/VAD) 的训练、开环评测与闭环评测代码。**所有模型均为世界模型强化学习教师模型 [Think2Drive](https://arxiv.org/abs/2402.16720) 的学生模型。**
+- 我们将 UniAD 和 VAD 的多个依赖（包括 mmcv、mmseg、mmdet 和 mmdet3d v0.17.1）合并为一个库，因此可以支持较新的 PyTorch，并可使用 DeepSpeed 等高级框架进行加速。
+- 使用 `git checkout tcp/admlp` 可获取对应的训练与评测代码。
+- **若要计算平顺性和效率指标**，请在自己的 team code agent 中实现与 `self.metric_info` 相关的代码。这两个指标需要以 20 Hz 记录每一步的自车状态。若要节省磁盘空间，可以注释保存传感器数据的相关代码。
 
-- This repo contains the training, open-loop evaluation, and closed-loop evaluation code for [BEVFormer](https://github.com/fundamentalvision/BEVFormer), [UniAD](https://github.com/OpenDriveLab/UniAD) , [VAD](https://github.com/hustvl/VAD) in [Bench2Drive](https://github.com/Thinklab-SJTU/Bench2Drive). **All models are student models of the world model RL teacher - [Think2Drive](https://arxiv.org/abs/2402.16720).**
-- We merge multiple dependencies of UniAD and VAD including mmcv, mmseg, mmdet, and mmdet3d (v0.17.1) into a single library. As a result, it could support latest pytorch and advanced frameworks like deepspeed for acceleration.
-- Use "git checkout tcp/admlp" to obtain their corresponding training and evaluation code.
-- **To calculate smoothness and efficiency**, remember to write self.metric_info related codes in your own team code agent. This two metrics require the state of the ego vehicle at each step in 20Hz. You may comment the lines about saving sensor data to save disk space.
+# 引用 <a name="citation"></a>
 
-# Citation <a name="citation"></a>
-
-Please consider citing our papers if the project helps your research with the following BibTex:
+如果本项目对您的研究有帮助，请考虑引用以下论文：
 
 ```bibtex
 @article{jia2024bench,
@@ -37,43 +35,41 @@ Please consider citing our papers if the project helps your research with the fo
 }
 ```
 
-# Getting Started
+# 快速开始
 
-- [Installation](docs/INSTALL.md)
-- [Prepare Dataset](docs/DATA_PREP.md)
-- [Train and Open-Loop Eval](docs/TRAIN_EVAL.md)
-- [Closed-Loop Eval in CARLA](docs/EVAL_IN_CARLA.md)
-- [Convert Codes from Nuscenes to Bench2Drive](docs/CONVERT_GUIDE.md)
+- [Docker 配置与工作区布局](docs/DOCKER.md)
+- [安装参考](docs/INSTALL.md)
+- [准备数据集](docs/DATA_PREP.md)
+- [训练与开环评测](docs/TRAIN_EVAL.md)
+- [在 CARLA 中进行闭环评测](docs/EVAL_IN_CARLA.md)
+- [将 NuScenes 代码迁移至 Bench2Drive](docs/CONVERT_GUIDE.md)
 
-# Results and Pre-trained Models
+# 结果与预训练模型
 
-## UniAD and VAD
+## UniAD 与 VAD
 
-As stated in the [news](https://github.com/Thinklab-SJTU/Bench2Drive) at 2024/08/27, there are several fixed bugs and changed protocols. Thus, the old version of closed-loop performance is deprecated.
+根据 2024 年 8 月 27 日发布的[公告](https://github.com/Thinklab-SJTU/Bench2Drive)，项目修复了若干问题并调整了评测协议，因此旧版闭环性能数据已弃用。
 
-
-| Method | L2 (m) 2s | Driving Score | Success Rate(%) | Config | Download | Eval Json|
-| :---: | :---: | :---: | :---: |  :---: | :---: | :---: |
-| UniAD-Tiny |0.80 | 40.73 (deprecated 32.00)  |  13.18 (deprecated 9.54) | [config](adzoo/uniad/configs/stage2_e2e/base_e2e_b2d.py) | [Hugging Face](https://huggingface.co/rethinklab/Bench2DriveZoo/blob/main/uniad_tiny_b2d.pth)/[Baidu Cloud](https://pan.baidu.com/s/1psr7AKYHD7CitZ30Bz-9sA?pwd=1234 )| [New Version](analysis/UniAD-Tiny.json) |
-| UniAD-Base |0.73 | 45.81 (deprecated  37.72)  |  16.36 (deprecated 9.54) | [config](adzoo/uniad/configs/stage2_e2e/tiny_e2e_b2d.py) | [Hugging Face](https://huggingface.co/rethinklab/Bench2DriveZoo/blob/main/uniad_base_b2d.pth)/[Baidu Cloud](https://pan.baidu.com/s/11p9IUGqTax1f4W_qsdLCRw?pwd=1234) | [New Version](analysis/UniAD-Base.json) |
-| VAD        |0.91 | 42.35 (deprecated 39.42)  | 15.00 (deprecated 10.00) | [config](adzoo/vad/configs/VAD/VAD_base_e2e_b2d.py) | [Hugging Face](https://huggingface.co/rethinklab/Bench2DriveZoo/blob/main/vad_b2d_base.pth)/[Baidu Cloud](https://pan.baidu.com/s/1rK7Z_D-JsA7kBJmEUcMMyg?pwd=1234) | [New Version](analysis/VAD.json) |
+|    方法    | L2 (m) 2s |      驾驶得分       |     成功率（%）     |                          配置                          |                                                                                下载                                                                                |            评测 JSON             |
+| :--------: | :-------: | :-----------------: | :-----------------: | :----------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------: |
+| UniAD-Tiny |   0.80    | 40.73（旧版 32.00） | 13.18（旧版 9.54）  | [配置](adzoo/uniad/configs/stage2_e2e/base_e2e_b2d.py) | [Hugging Face](https://huggingface.co/rethinklab/Bench2DriveZoo/blob/main/uniad_tiny_b2d.pth)/[百度网盘](https://pan.baidu.com/s/1psr7AKYHD7CitZ30Bz-9sA?pwd=1234) | [新版](analysis/UniAD-Tiny.json) |
+| UniAD-Base |   0.73    | 45.81（旧版 37.72） | 16.36（旧版 9.54）  | [配置](adzoo/uniad/configs/stage2_e2e/tiny_e2e_b2d.py) | [Hugging Face](https://huggingface.co/rethinklab/Bench2DriveZoo/blob/main/uniad_base_b2d.pth)/[百度网盘](https://pan.baidu.com/s/11p9IUGqTax1f4W_qsdLCRw?pwd=1234) | [新版](analysis/UniAD-Base.json) |
+|    VAD     |   0.91    | 42.35（旧版 39.42） | 15.00（旧版 10.00） |   [配置](adzoo/vad/configs/VAD/VAD_base_e2e_b2d.py)    |  [Hugging Face](https://huggingface.co/rethinklab/Bench2DriveZoo/blob/main/vad_b2d_base.pth)/[百度网盘](https://pan.baidu.com/s/1rK7Z_D-JsA7kBJmEUcMMyg?pwd=1234)  |    [新版](analysis/VAD.json)     |
 
 ## BEVFormer
 
-| Method | mAP | NDS | Config | Download |
-| :---: | :---: | :---: | :---: |  :---: |
-| BEVFormer-Tiny | 0.37 | 0.43  | [config](adzoo/bevformer/configs/bevformer/bevformer_tiny_b2d.py) | [Hugging Face](https://huggingface.co/rethinklab/Bench2DriveZoo/blob/main/bevformer_tiny_b2d.pth)/[Baidu Cloud](https://pan.baidu.com/s/1TWMs9YgKYm2DF5YfXF8i3g?pwd=1234) |
-| BEVFormer-Base | 0.63 | 0.67  | [config](adzoo/bevformer/configs/bevformer/bevformer_base_b2d.py) | [Hugging Face](https://huggingface.co/rethinklab/Bench2DriveZoo/blob/main/bevformer_base_b2d.pth)/[Baidu Cloud](https://pan.baidu.com/s/1Y4VkE1gc8BU0zJ4z2fmIkQ?pwd=1234) |
+|      方法      | mAP  | NDS  |                              配置                               |                                                                                  下载                                                                                  |
+| :------------: | :--: | :--: | :-------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| BEVFormer-Tiny | 0.37 | 0.43 | [配置](adzoo/bevformer/configs/bevformer/bevformer_tiny_b2d.py) | [Hugging Face](https://huggingface.co/rethinklab/Bench2DriveZoo/blob/main/bevformer_tiny_b2d.pth)/[百度网盘](https://pan.baidu.com/s/1TWMs9YgKYm2DF5YfXF8i3g?pwd=1234) |
+| BEVFormer-Base | 0.63 | 0.67 | [配置](adzoo/bevformer/configs/bevformer/bevformer_base_b2d.py) | [Hugging Face](https://huggingface.co/rethinklab/Bench2DriveZoo/blob/main/bevformer_base_b2d.pth)/[百度网盘](https://pan.baidu.com/s/1Y4VkE1gc8BU0zJ4z2fmIkQ?pwd=1234) |
 
+# 失败案例分析
 
-# Failure Cases Analysis
+我们在[这里](analysis/analysis.md)提供了 TCP-traj、UniAD-Base 和 VAD-Base 的可视化视频与定性分析。您可以参考 https://github.com/Thinklab-SJTU/Bench2DriveZoo/blob/uniad/vad/team_code/vad_b2d_agent_visualize.py 编写自己的可视化代码。
 
-We provide some visualization videos and qualitatively analysis for TCP-traj, UniAD-Base, VAD-Base at [here](analysis/analysis.md).  You may refer to https://github.com/Thinklab-SJTU/Bench2DriveZoo/blob/uniad/vad/team_code/vad_b2d_agent_visualize.py to write your own visualization code.
-
-# Related Resources
+# 相关资源
 
 - [Bench2Drive](https://github.com/Thinklab-SJTU/Bench2Drive)
 - [BEVFormer](https://github.com/fundamentalvision/BEVFormer)
-- [UniAD](https://github.com/OpenDriveLab/UniAD) 
+- [UniAD](https://github.com/OpenDriveLab/UniAD)
 - [VAD](https://github.com/hustvl/VAD)
-

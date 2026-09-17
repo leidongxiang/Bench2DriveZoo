@@ -1,0 +1,16 @@
+.git
+.env
+.venv
+__pycache__
+*.pyc
+*.pth
+*.log
+build
+dist
+data/bench2drive
+data/nuscenes
+ckpts
+outputs
+logs
+cache
+**/work_dirs

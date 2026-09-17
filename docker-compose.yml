@@ -1,0 +1,42 @@
+services:
+  bench2drive-zoo:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: bench2drive-zoo:cuda11.8
+    working_dir: /workspace/Bench2DriveZoo
+    user: "${B2D_UID:?Set B2D_UID in .env}:${B2D_GID:?Set B2D_GID in .env}"
+    stdin_open: true
+    tty: true
+    ipc: host
+    network_mode: host
+    shm_size: "32gb"
+    environment:
+      HOME: /workspace/cache/bench2drive-zoo
+      B2D_ROOT: /workspace/data/bench2drive
+      NUSCENES_ROOT: /workspace/data/nuscenes
+      VAD_WEIGHTS: /workspace/weights/vad
+      B2D_OUTPUT: /workspace/outputs/bench2drive-zoo
+      B2D_CACHE: /workspace/cache/bench2drive-zoo
+      CARLA_ROOT: /workspace/carla
+      BENCH2DRIVE_ROOT: /workspace/Bench2Drive
+      IS_BENCH2DRIVE: "1"
+      CUDA_VISIBLE_DEVICES: ${CUDA_VISIBLE_DEVICES:-all}
+      NVIDIA_DRIVER_CAPABILITIES: all
+      XDG_CACHE_HOME: /workspace/cache/bench2drive-zoo
+    volumes:
+      - .:/workspace/Bench2DriveZoo
+      - ${VAD_WEIGHTS:?Set VAD_WEIGHTS in .env}:/workspace/weights/vad:ro
+      - ${B2D_OUTPUT:?Set B2D_OUTPUT in .env}:/workspace/outputs/bench2drive-zoo
+      - ${B2D_OUTPUT:?Set B2D_OUTPUT in .env}/infos:/workspace/Bench2DriveZoo/data/infos
+      - ${B2D_CACHE:-/home/leidx/workspace/cache/bench2drive-zoo}:/workspace/cache/bench2drive-zoo
+      - ${CARLA_ROOT:?Set CARLA_ROOT in .env}:/workspace/carla
+      - ${BENCH2DRIVE_ROOT:?Set BENCH2DRIVE_ROOT in .env}:/workspace/Bench2Drive
+      - .:/workspace/Bench2Drive/Bench2DriveZoo
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
