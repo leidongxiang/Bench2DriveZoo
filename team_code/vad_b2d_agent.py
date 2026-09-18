@@ -429,7 +429,7 @@ class VadAgent(autonomous_agent.AutonomousAgent):
 
         metric_info = self.get_metric_info()
         self.metric_info[self.step] = metric_info
-        if SAVE_PATH is not None and self.step % 10 == 0:
+        if SAVE_PATH is not None and self.step % 1 == 0:
             try:
                 hero = CarlaDataProvider.get_hero_actor() or self.hero_actor
                 actors = list(CarlaDataProvider.get_world().get_actors())
